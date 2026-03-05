@@ -1,151 +1,138 @@
-const board=document.getElementById("board")
-const movesText=document.getElementById("moves")
-const timeText=document.getElementById("time")
-const recordText=document.getElementById("record")
-const difficulty=document.getElementById("difficulty")
-const win=document.getElementById("win")
+// DOM
+const board = document.getElementById("board");
+const movesText = document.getElementById("moves");
+const timeText = document.getElementById("time");
+const recordText = document.getElementById("record");
+const win = document.getElementById("win");
+const levelText = document.getElementById("level");
 
-const icons=["🐶","🐱","🐸","🦊","🐼","🐵","🐷","🐯","🐰","🦁"]
+// Lista de emojis (puedes agregar más)
+const emojis = ["🐶","🐱","🐸","🦊","🐼","🐵","🐷","🐯","🐰","🦁","🐔","🐤","🐙","🦄","🐞","🐢","🦋","🦑","🦀","🐳","🐺"];
 
-let first=null
-let second=null
-let lock=false
+// 🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐻‍❄️ 🐨 🐯 🦁 🐮 🐷 🐽 🐸 🐵 🙈 🙉 🙊 🐒 🐔 🐧 🐦 🐤 🐣 🐥 🦆 🦅 🦉 🦇 🐺 🐗 🐴 🦄 🐝 🪱 🐛 🦋 🐌 🐞 🐜 🦟 🦗 🕷 🕸 🦂 🐢 🐍 🦎 🦖 🦕 🐙 🦑 🦐 🦞 🦀 🐡 🐠 🐟 🐬 🐳 🐋 🦈 🐊 🐅 🐆 🦓 🦍 🦧 🦣 🐘 🦛 🦏 🐪 🐫 🦒 🦘 🐃 🐂 🐄 🐎 🐖 🐏 🐑 🦙 🐐 🦌 🐕 🐩 🦮 🐕‍🦺 🐈 🐈‍⬛ 🐓 🦃 🦚 🦜 🦢 🦩 🕊 🐇 🦝 🦨 🦡 🦦 🦦 🦥 🐁 🐀 🐿 🦔
 
-let moves=0
-let time=0
-let timer
+// Colores para los pares (primer y segundo)
+const pairColors = ["#123","#123"];
 
-function startGame(){
+// Colores de fondo por nivel
+const levelColors = ["#764ba2","#667eea","#ff6b6b","#f7b32b","#6bcf70","#ff4f81","#00d4ff","#ff9f1c","#8e44ad","#2ecc71"];
 
-board.innerHTML=""
-win.style.display="none"
+let first = null, second = null, lock = false;
+let moves = 0, time = 0, timer;
+let level = 1;
 
-moves=0
-time=0
+// Inicia el juego
+function startGame(resetLevel = false) {
+  if (resetLevel) level = 1;
+  levelText.textContent = level;
+  win.style.display = "none";
+  moves = 0;
+  time = 0;
+  movesText.textContent = moves;
+  timeText.textContent = time;
+  clearInterval(timer);
+  timer = setInterval(() => { time++; timeText.textContent = time; }, 1000);
 
-movesText.textContent=0
-timeText.textContent=0
+  // Fondo dinámico por nivel
+  document.body.style.background = levelColors[(level - 1) % levelColors.length];
 
-clearInterval(timer)
+  board.innerHTML = "";
 
-timer=setInterval(()=>{
-time++
-timeText.textContent=time
-},1000)
+  // Número de pares según nivel (niveles infinitos)
+  const pairs = 2 + level;
+  const selected = [];
+  for (let i = 0; i < pairs; i++) {
+    selected.push(emojis[i % emojis.length]); // repite emojis si se acaban
+  }
 
-let pairs=difficulty.value/2
+  // Crear cartas con fondo distinto por par
+  const cards = [];
+  selected.forEach(emoji => {
+    cards.push({emoji: emoji, color: pairColors[0]}); // primer par
+    cards.push({emoji: emoji, color: pairColors[1]}); // segundo par
+  });
 
-let selected=icons.slice(0,pairs)
-let cards=[...selected,...selected]
+  // Mezclar cartas
+  cards.sort(() => 0.5 - Math.random());
 
-cards.sort(()=>0.5-Math.random())
-
-cards.forEach(icon=>{
-
-let card=document.createElement("div")
-card.className="card"
-card.dataset.icon=icon
-
-card.innerHTML=`
-<div class="face front"></div>
-<div class="face back">${icon}</div>
-`
-
-card.addEventListener("click",flipCard)
-
-board.appendChild(card)
-
-})
-
+  // Insertar cartas en el DOM
+  cards.forEach(cardData => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.dataset.emoji = cardData.emoji;
+    card.innerHTML = `
+      <div class="face front" style="background:${cardData.color}"></div>
+      <div class="face back">${cardData.emoji}</div>
+    `;
+    card.addEventListener("click", flipCard);
+    board.appendChild(card);
+  });
 }
 
-function flipCard(){
-
-if(lock) return
-if(this.classList.contains("flip")) return
-
-this.classList.add("flip")
-
-if(!first){
-first=this
-return
+// Girar carta
+function flipCard() {
+  if (lock) return;
+  if (this.classList.contains("flip")) return;
+  this.classList.add("flip");
+  if (!first) { first = this; return; }
+  second = this;
+  moves++;
+  movesText.textContent = moves;
+  checkMatch();
 }
 
-second=this
-
-moves++
-movesText.textContent=moves
-
-checkMatch()
-
+// Revisar coincidencia
+function checkMatch() {
+  if (first.dataset.emoji === second.dataset.emoji) {
+    first.removeEventListener("click", flipCard);
+    second.removeEventListener("click", flipCard);
+    resetTurn();
+    checkWin();
+  } else {
+    lock = true;
+    setTimeout(() => {
+      first.classList.remove("flip");
+      second.classList.remove("flip");
+      resetTurn();
+    }, 800);
+  }
 }
 
-function checkMatch(){
-
-if(first.dataset.icon===second.dataset.icon){
-
-first.removeEventListener("click",flipCard)
-second.removeEventListener("click",flipCard)
-
-reset()
-
-checkWin()
-
-}else{
-
-lock=true
-
-setTimeout(()=>{
-
-first.classList.remove("flip")
-second.classList.remove("flip")
-
-reset()
-
-},800)
-
+function resetTurn() {
+  [first, second] = [null, null];
+  lock = false;
 }
 
+// Revisar si ganó el nivel
+function checkWin() {
+  if (document.querySelectorAll(".flip").length === board.children.length) {
+    clearInterval(timer);
+    saveRecord();
+    win.style.display = "block";
+  }
 }
 
-function reset(){
-[first,second]=[null,null]
-lock=false
+function nextLevel() {
+  level++;
+  startGame();
 }
 
-function checkWin(){
-
-if(document.querySelectorAll(".flip").length===board.children.length){
-
-clearInterval(timer)
-
-saveRecord()
-
-win.style.display="block"
-
+// Guardar récord
+function saveRecord() {
+  const best = localStorage.getItem("memoryEmojiRecord");
+  if (!best || time < best) localStorage.setItem("memoryEmojiRecord", time);
+  recordText.textContent = localStorage.getItem("memoryEmojiRecord");
 }
 
+// Mostrar récord al inicio
+recordText.textContent = localStorage.getItem("memoryEmojiRecord") || "--";
+
+// Registrar Service Worker (requiere servidor local o HTTPS)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js")
+    .then(() => console.log("Service Worker registrado"))
+    .catch(err => console.log("Error SW:", err));
 }
 
-function saveRecord(){
-
-let best=localStorage.getItem("memoryRecord")
-
-if(!best || time<best){
-localStorage.setItem("memoryRecord",time)
-}
-
-recordText.textContent=localStorage.getItem("memoryRecord")
-
-}
-
-recordText.textContent=localStorage.getItem("memoryRecord") || "--"
-
-if("serviceWorker" in navigator){
-
-navigator.serviceWorker.register("sw.js")
-.then(()=>console.log("Service Worker registrado"))
-
-}
-
-startGame()
+// Iniciar primer nivel
+startGame(true);
