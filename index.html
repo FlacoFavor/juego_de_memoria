@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#764ba2">
+<title>juego de memoria</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+
+<body>
+
+<h1>🧠 Memory Game</h1>
+
+<div class="menu">
+<select id="difficulty">
+<option value="8">Fácil</option>
+<option value="12">Medio</option>
+<option value="16">Difícil</option>
+</select>
+
+<button onclick="startGame()">Nuevo Juego</button>
+</div>
+
+<div class="stats">
+<span>Mov: <b id="moves">0</b></span>
+<span>Tiempo: <b id="time">0</b>s</span>
+<span>Record: <b id="record">--</b></span>
+</div>
+
+<div id="board" class="board"></div>
+
+<div id="win" class="win">
+🎉 ¡Ganaste!
+<br>
+<button onclick="startGame()">Jugar otra vez</button>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
