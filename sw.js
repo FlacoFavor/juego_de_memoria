@@ -3,7 +3,7 @@ const CACHE_NAME = "memory-emoji-cache-v1";
 const urlsToCache = [
   "./",
   "./index.html",
-  "./style.css",
+  "./estilos.css",
   "./script.js",
   "./manifest.json"
 ];
